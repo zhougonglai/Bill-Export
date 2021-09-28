@@ -38,11 +38,22 @@
 
   const toggleModal = (bool) => (open = bool);
   const oauthToken = async () => {
-    window.open(
-      `https://aip.baidubce.com/oauth/2.0/token?${new URLSearchParams(
-        generater
-      )}`
-    );
+    fetch('https://aip.baidubce.com/oauth/2.0/token', {
+      method: 'post',
+      mode: 'no-cors',
+      header: {
+        'content-type': 'application/x-www-form-urlencoded',
+        'Access-Control-Allow-Origin': true,
+        origin: 'https://bill-export.vercel.app/'
+      },
+      credentials: 'same-origin',
+      body: new URLSearchParams(generater)
+    });
+    // window.open(
+    //   `https://aip.baidubce.com/oauth/2.0/token?${new URLSearchParams(
+    //     generater
+    //   )}`
+    // );
   };
 </script>
 
