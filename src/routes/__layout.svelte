@@ -97,7 +97,7 @@
           <Button kind="secondary" on:click={() => stepContrl(currentIndex + 1)}
             >下一步</Button
           >
-          <Button on:click={() => oauthToken()}>生成Token</Button>
+          <Button on:click={oauthToken}>生成Token</Button>
         </ButtonSet>
       </FluidForm>
     {:else}
