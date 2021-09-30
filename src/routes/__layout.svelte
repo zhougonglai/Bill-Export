@@ -12,12 +12,15 @@
     ProgressIndicator,
     ProgressStep,
     Button,
-    ButtonSet
+    ButtonSet,
+    Loading
   } from 'carbon-components-svelte';
   import { onMount } from 'svelte';
-  import { get } from 'svelte/store';
   import { session } from '$app/stores';
   import UserFilled20 from 'carbon-icons-svelte/lib/UserFilled20';
+  import { get } from 'svelte/store';
+  import Cookies from 'js-cookie';
+
   let loaded = false;
   let currentIndex = 0;
   let token = '';
@@ -35,22 +38,30 @@
     }
   ];
 
-  $: sessionStore = get(session);
+  $: account_token = Cookies.get('account_token');
+  $: linkToken = new URLSearchParams(generater);
+
+  session.subscribe((store) => store);
 
   onMount(() => {
     loaded = true;
-    if ('account_token' in sessionStore) {
-      open = false;
-    } else {
-      open = true;
+    console.log('account_token', account_token);
+    if (account_token) {
+      session.set({ account_token });
     }
   });
 
   const stepContrl = (index) => (currentIndex = index);
+  const saveSession = () => {
+    Cookies.set('account_token', token, { expires: 30 });
+    session.set({ account_token: token });
+    console.log(Cookies.get('account_token'));
+  };
 
-  async function oauthToken() {
+  async function oauthToken(e) {
     if (generater.client_id && generater.client_secret) {
       const params = new URLSearchParams(generater);
+      console.log(e);
       window.open(
         `https://aip.baidubce.com/oauth/2.0/token?${params.toString()}`
       );
@@ -65,57 +76,76 @@
       <SkipToContent />
     </div>
     <HeaderUtilities>
-      <HeaderGlobalAction aria-label="login" icon={UserFilled20} />
+      <HeaderGlobalAction class="icon" aria-label="login" icon={UserFilled20} />
     </HeaderUtilities>
   </Header>
 
   <Content>
-    <ProgressIndicator bind:currentIndex spaceEqually class="w-full">
-      {#each steps as step, i}
-        <ProgressStep
-          complete={currentIndex >= i}
-          label={step.label}
-          on:click={() => (currentIndex = i)}
-        />
-      {/each}
-    </ProgressIndicator>
-    {#if currentIndex === 0}
-      <FluidForm class="mt-8">
-        <TextInput
-          labelText="API Key"
-          placeholder="请填写"
-          required
-          bind:value={generater.client_id}
-        />
-        <TextInput
-          labelText="Secret Key"
-          placeholder="请填写"
-          required
-          bind:value={generater.client_secret}
-        />
-        <ButtonSet class="justify-end mt-4">
-          <Button kind="secondary" on:click={() => stepContrl(currentIndex + 1)}
-            >下一步</Button
-          >
-          <Button on:click={oauthToken}>生成Token</Button>
-        </ButtonSet>
-      </FluidForm>
+    {#if account_token}
+      <slot />
     {:else}
-      <FluidForm class="mt-8">
-        <TextInput
-          labelText="API Key"
-          placeholder="请填写"
-          required
-          bind:value={token}
-        />
-        <ButtonSet class="justify-end mt-4">
-          <Button kind="secondary" on:click={() => stepContrl(currentIndex - 1)}
-            >上一步</Button
-          >
-          <Button>使用Token</Button>
-        </ButtonSet>
-      </FluidForm>
+      <ProgressIndicator bind:currentIndex spaceEqually class="w-full">
+        {#each steps as step, i}
+          <ProgressStep
+            complete={currentIndex >= i}
+            label={step.label}
+            on:click={() => (currentIndex = i)}
+          />
+        {/each}
+      </ProgressIndicator>
+      {#if currentIndex === 0}
+        <FluidForm class="mt-8">
+          <TextInput
+            labelText="API Key"
+            placeholder="请填写"
+            required
+            bind:value={generater.client_id}
+          />
+          <TextInput
+            labelText="Secret Key"
+            placeholder="请填写"
+            required
+            bind:value={generater.client_secret}
+          />
+          <ButtonSet class="justify-end mt-4">
+            <Button
+              kind="secondary"
+              on:click={() => stepContrl(currentIndex + 1)}>下一步</Button
+            >
+            <Button
+              disabled={!generater.client_id || !generater.client_secret}
+              target="_blank"
+              on:click={() => stepContrl(currentIndex + 1)}
+              href={`https://aip.baidubce.com/oauth/2.0/token?${linkToken}`}
+              >生成Token</Button
+            >
+          </ButtonSet>
+        </FluidForm>
+      {:else}
+        <FluidForm class="mt-8">
+          <TextInput
+            labelText="API Key"
+            placeholder="请填写"
+            required
+            bind:value={token}
+          />
+          <ButtonSet class="justify-end mt-4">
+            <Button
+              kind="secondary"
+              on:click={() => stepContrl(currentIndex - 1)}>上一步</Button
+            >
+            <Button on:click={() => saveSession()}>使用Token</Button>
+          </ButtonSet>
+        </FluidForm>
+      {/if}
     {/if}
-    <slot />
   </Content>
+{:else}
+  <Loading />
 {/if}
+
+<style lang="scss">
+  :global(.bx--header__action > svg) {
+    display: initial;
+  }
+</style>
