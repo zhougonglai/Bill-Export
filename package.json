@@ -4,11 +4,14 @@
   "scripts": {
     "dev": "svelte-kit dev",
     "build": "svelte-kit build --verbose",
-    "preview": "svelte-kit preview"
+    "preview": "svelte-kit preview",
+    "server": "vercel",
+    "start": "vercel dev"
   },
   "devDependencies": {
     "@sveltejs/adapter-vercel": "next",
     "@sveltejs/kit": "next",
+    "@vercel/fetch": "^6.1.1",
     "autoprefixer": "^10.3.6",
     "carbon-components-svelte": "^0.44.3",
     "carbon-icons-svelte": "^10.38.0",

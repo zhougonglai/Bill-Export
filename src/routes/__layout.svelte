@@ -16,14 +16,15 @@
     Loading
   } from 'carbon-components-svelte';
   import { onMount } from 'svelte';
-  import { session } from '$app/stores';
   import UserFilled20 from 'carbon-icons-svelte/lib/UserFilled20';
   import { get } from 'svelte/store';
   import Cookies from 'js-cookie';
+  import { session } from '$app/stores';
+
+  import Modal from '$lib/Modal.svelte';
 
   let loaded = false;
-  let currentIndex = 0;
-  let token = '';
+  let open = false;
   let generater = {
     grant_type: 'client_credentials',
     client_id: '',
@@ -38,34 +39,32 @@
     }
   ];
 
-  $: account_token = Cookies.get('account_token');
+  $: access_token = Cookies.get('access_token');
   $: linkToken = new URLSearchParams(generater);
 
   session.subscribe((store) => store);
 
   onMount(() => {
     loaded = true;
-    console.log('account_token', account_token);
-    if (account_token) {
-      session.set({ account_token });
+    console.log('access_token', access_token);
+    if (access_token) {
+      session.set({ access_token });
     }
   });
 
   const stepContrl = (index) => (currentIndex = index);
-  const saveSession = () => {
-    Cookies.set('account_token', token, { expires: 30 });
-    session.set({ account_token: token });
-    console.log(Cookies.get('account_token'));
-  };
 
   async function oauthToken(e) {
     if (generater.client_id && generater.client_secret) {
-      const params = new URLSearchParams(generater);
-      console.log(e);
-      window.open(
-        `https://aip.baidubce.com/oauth/2.0/token?${params.toString()}`
-      );
-      stepContrl(1);
+      // const params = new URLSearchParams(generater);
+      const { access_token, expires_in } = await fetch('/api/token', {
+        method: 'post',
+        body: JSON.stringify(generater)
+      }).then((res) => res.json());
+      Cookies.set('access_token', access_token, {
+        expires: expires_in / 60 / 60 / 24
+      });
+      session.set({ access_token });
     }
   }
 </script>
@@ -76,69 +75,18 @@
       <SkipToContent />
     </div>
     <HeaderUtilities>
-      <HeaderGlobalAction class="icon" aria-label="login" icon={UserFilled20} />
+      <HeaderGlobalAction
+        class="icon"
+        aria-label="login"
+        icon={UserFilled20}
+        on:click={() => (open = true)}
+      />
     </HeaderUtilities>
   </Header>
 
   <Content>
-    {#if account_token}
-      <slot />
-    {:else}
-      <ProgressIndicator bind:currentIndex spaceEqually class="w-full">
-        {#each steps as step, i}
-          <ProgressStep
-            complete={currentIndex >= i}
-            label={step.label}
-            on:click={() => (currentIndex = i)}
-          />
-        {/each}
-      </ProgressIndicator>
-      {#if currentIndex === 0}
-        <FluidForm class="mt-8">
-          <TextInput
-            labelText="API Key"
-            placeholder="请填写"
-            required
-            bind:value={generater.client_id}
-          />
-          <TextInput
-            labelText="Secret Key"
-            placeholder="请填写"
-            required
-            bind:value={generater.client_secret}
-          />
-          <ButtonSet class="justify-end mt-4">
-            <Button
-              kind="secondary"
-              on:click={() => stepContrl(currentIndex + 1)}>下一步</Button
-            >
-            <Button
-              disabled={!generater.client_id || !generater.client_secret}
-              target="_blank"
-              on:click={() => stepContrl(currentIndex + 1)}
-              href={`https://aip.baidubce.com/oauth/2.0/token?${linkToken}`}
-              >生成Token</Button
-            >
-          </ButtonSet>
-        </FluidForm>
-      {:else}
-        <FluidForm class="mt-8">
-          <TextInput
-            labelText="API Key"
-            placeholder="请填写"
-            required
-            bind:value={token}
-          />
-          <ButtonSet class="justify-end mt-4">
-            <Button
-              kind="secondary"
-              on:click={() => stepContrl(currentIndex - 1)}>上一步</Button
-            >
-            <Button on:click={() => saveSession()}>使用Token</Button>
-          </ButtonSet>
-        </FluidForm>
-      {/if}
-    {/if}
+    <Modal bind:open />
+    <slot />
   </Content>
 {:else}
   <Loading />
