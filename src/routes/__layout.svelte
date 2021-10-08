@@ -27,15 +27,20 @@
   let loaded = false;
   let open = false;
 
-  $: access_token = Cookies.get('access_token');
+  $: session_store = get(session);
+
+  // let access_token = Cookies.get('access_token');
 
   session.subscribe((store) => store);
 
   onMount(() => {
     loaded = true;
-    console.log('access_token', access_token);
-    if (access_token) {
-      session.set({ access_token });
+    console.log('access_token', session_store);
+    if (Cookies.get('access_token')) {
+      session.set({ access_token: Cookies.get('access_token') });
+      console.log(session_store);
+    } else {
+      open = true;
     }
   });
 </script>
@@ -56,18 +61,23 @@
   </Header>
 
   <Content>
-    {#if access_token}
+    {#if session_store.access_token}
       <Modal
         bind:open
         modalHeading="Token"
         primaryButtonText="确认"
-        secondaryButtonText="取消"
-        on:click:button--secondary={() => (open = false)}
+        secondaryButtonText="清理Token"
+        on:click:button--secondary={() => {
+          session.set('');
+          Cookies.remove('access_token');
+          open = false;
+          location.reload();
+        }}
         on:open
         on:close
         on:submit={() => (open = false)}
       >
-        <p>{access_token}</p>
+        <p>{session_store.access_token}</p>
       </Modal>
     {:else}
       <LoginModal bind:open />

@@ -34,6 +34,7 @@
         expires: expires_in / 60 / 60 / 24
       });
       session.set({ access_token });
+      open = false;
     }
   }
 </script>

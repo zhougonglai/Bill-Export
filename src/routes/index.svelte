@@ -87,9 +87,10 @@
         console.log(res);
         tables = tables.concat(res);
         console.log(tables);
-      })
-      .finally((e) => {
         files = files.map((file) => ({ ...file, status: 'complete' }));
+      })
+      .catch((err) => {
+        files = files.map((file) => ({ ...file, status: 'edit' }));
       });
   };
 
@@ -97,7 +98,7 @@
     const book = XLSX.utils.table_to_book(
       document.getElementsByTagName('table')[0]
     );
-    XLSX.writeFile(book, 'xlsx');
+    XLSX.writeFile(book, '票据.xlsx');
   };
 </script>
 
