@@ -12,30 +12,14 @@ import Cookies from 'js-cookie';
 
 export const orcInvoice = async (body) =>
   await fetch(
-    `https://aip.baidubce.com/rest/2.0/ocr/v1/vat_invoice?${new URLSearchParams(
-      { account_token: Cookies.get('account_token') }
-    )}`,
+    `/api/ocr/vat_invoice?${new URLSearchParams({
+      access_token: Cookies.get('access_token')
+    })}`,
     {
       method: 'post',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
       },
-      mode: 'no-cors',
-      body: new URLSearchParams(body)
-    }
-  );
-
-export const orcInvoiceVerify = async (body) =>
-  await fetch(
-    `https://aip.baidubce.com/rest/2.0/ocr/v1/vat_invoice_verification?${new URLSearchParams(
-      { account_token: Cookies.get('account_token') }
-    )}`,
-    {
-      method: 'post',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      mode: 'no-cors',
       body: new URLSearchParams(body)
     }
   );

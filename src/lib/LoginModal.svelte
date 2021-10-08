@@ -3,9 +3,13 @@
     ComposedModal,
     FluidForm,
     ModalBody,
+    ModalFooter,
     ModalHeader,
     TextInput
   } from 'carbon-components-svelte';
+  import Cookies from 'js-cookie';
+  import { session } from '$app/stores';
+
   export let form;
   export let open = false;
   export let generater = {
@@ -19,7 +23,7 @@
     // form.$$restProps();
   }
 
-  async function oauthToken(e) {
+  async function oauthToken() {
     if (generater.client_id && generater.client_secret) {
       // const params = new URLSearchParams(generater);
       const { access_token, expires_in } = await fetch('/api/token', {
@@ -34,7 +38,7 @@
   }
 </script>
 
-<ComposedModal bind:open>
+<ComposedModal bind:open on:submit={oauthToken}>
   <ModalHeader title="获取Token" />
   <ModalBody hasForm>
     <FluidForm bind:this={form}>
@@ -50,4 +54,5 @@
       />
     </FluidForm>
   </ModalBody>
+  <ModalFooter primaryButtonText="确认" />
 </ComposedModal>

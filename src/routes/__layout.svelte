@@ -13,7 +13,8 @@
     ProgressStep,
     Button,
     ButtonSet,
-    Loading
+    Loading,
+    Modal
   } from 'carbon-components-svelte';
   import { onMount } from 'svelte';
   import UserFilled20 from 'carbon-icons-svelte/lib/UserFilled20';
@@ -21,26 +22,12 @@
   import Cookies from 'js-cookie';
   import { session } from '$app/stores';
 
-  import Modal from '$lib/Modal.svelte';
+  import LoginModal from '$lib/LoginModal.svelte';
 
   let loaded = false;
   let open = false;
-  let generater = {
-    grant_type: 'client_credentials',
-    client_id: '',
-    client_secret: ''
-  };
-  let steps = [
-    {
-      label: '生成Token'
-    },
-    {
-      label: '填写Token'
-    }
-  ];
 
   $: access_token = Cookies.get('access_token');
-  $: linkToken = new URLSearchParams(generater);
 
   session.subscribe((store) => store);
 
@@ -51,22 +38,6 @@
       session.set({ access_token });
     }
   });
-
-  const stepContrl = (index) => (currentIndex = index);
-
-  async function oauthToken(e) {
-    if (generater.client_id && generater.client_secret) {
-      // const params = new URLSearchParams(generater);
-      const { access_token, expires_in } = await fetch('/api/token', {
-        method: 'post',
-        body: JSON.stringify(generater)
-      }).then((res) => res.json());
-      Cookies.set('access_token', access_token, {
-        expires: expires_in / 60 / 60 / 24
-      });
-      session.set({ access_token });
-    }
-  }
 </script>
 
 {#if loaded}
@@ -85,7 +56,22 @@
   </Header>
 
   <Content>
-    <Modal bind:open />
+    {#if access_token}
+      <Modal
+        bind:open
+        modalHeading="Token"
+        primaryButtonText="确认"
+        secondaryButtonText="取消"
+        on:click:button--secondary={() => (open = false)}
+        on:open
+        on:close
+        on:submit={() => (open = false)}
+      >
+        <p>{access_token}</p>
+      </Modal>
+    {:else}
+      <LoginModal bind:open />
+    {/if}
     <slot />
   </Content>
 {:else}

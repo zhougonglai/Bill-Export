@@ -1,8 +1,8 @@
 <script>
-  import { session } from '$app/stores';
   import {
     Button,
     ButtonSet,
+    DataTable,
     FileUploader,
     FileUploaderButton,
     FileUploaderDropContainer,
@@ -14,16 +14,14 @@
   } from 'carbon-components-svelte';
   import DirectionStraightRight20 from 'carbon-icons-svelte/lib/DirectionStraightRight20';
   import { get } from 'svelte/store';
-
+  import XLSX from 'xlsx';
   import { fileByBase64 } from '$lib/utils';
   import { orcInvoice } from '$lib/services';
 
-  session.subscribe(console.log);
   let fileInputEl,
     selected = 0,
-    files = [];
-
-  $: sessionStore = get(session);
+    files = [],
+    tables = [];
 
   const checkSize = (file) => file.size > 4 * 1024 * 1024;
 
@@ -76,11 +74,30 @@
 
   const ocrInvoiceAct = () => {
     const action = (params) => [{ image: params }];
+    files = files.map((file) =>
+      file.status === 'edit' ? { ...file, status: 'uploading' } : file
+    );
+    const orcFiles = files.filter((file) => file.status === 'uploading');
     Promise.all(
-      files.map((file) => orcInvoice(action(file.result)[selected]))
-    ).finally((e) => {
-      console.log(e);
-    });
+      orcFiles.map((file) =>
+        orcInvoice(action(file.result)[selected]).then((res) => res.json())
+      )
+    )
+      .then((res) => {
+        console.log(res);
+        tables = tables.concat(res);
+        console.log(tables);
+      })
+      .finally((e) => {
+        files = files.map((file) => ({ ...file, status: 'complete' }));
+      });
+  };
+
+  const exportExcel = () => {
+    const book = XLSX.utils.table_to_book(
+      document.getElementsByTagName('table')[0]
+    );
+    XLSX.writeFile(book, 'xlsx');
   };
 </script>
 
@@ -116,7 +133,6 @@
                 on:delete={() => deleteFile(i)}
                 errorSubject={filer.errorSubject}
               />
-              <!-- errorBody={filer.errorBody} -->
             {/each}
           {:else}
             <div>空</div>
@@ -124,8 +140,8 @@
         </div>
       {/if}
     </TabContent>
-    <TabContent>Content 2</TabContent>
-    <TabContent>Content 3</TabContent>
+    <TabContent>待开发</TabContent>
+    <TabContent>待开发</TabContent>
   </div>
 </Tabs>
 <hr />
@@ -136,3 +152,34 @@
     >
   </ButtonSet>
 </div>
+<hr />
+
+{#if tables.length}
+  <DataTable
+    headers={[
+      {
+        key: 'Agent',
+        value: '是否代开'
+      },
+      {
+        key: 'AmountInFiguers',
+        value: '价税合计(小写)'
+      },
+      {
+        key: 'AmountInWords',
+        value: '价税合计(大写)'
+      }
+    ]}
+    rows={tables.map((table) => ({
+      ...table,
+      ...table.words_result,
+      id: table.log_id
+    }))}
+  />
+  <hr class="my-4" />
+  <div class="flex items-center justify-center p-4">
+    <ButtonSet>
+      <Button on:click={exportExcel}>导出</Button>
+    </ButtonSet>
+  </div>
+{/if}

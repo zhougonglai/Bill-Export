@@ -27,7 +27,8 @@
   "dependencies": {
     "js-cookie": "^3.0.1",
     "prettier": "^2.3.2",
-    "prettier-plugin-svelte": "^2.3.1"
+    "prettier-plugin-svelte": "^2.3.1",
+    "xlsx": "^0.17.2"
   },
   "prettier": {
     "arrowParens": "always",
